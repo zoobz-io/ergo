@@ -1,5 +1,5 @@
 version: 2
-project_name: samoa
+project_name: ergo
 
 builds:
   - skip: true  # Library packages don't build binaries
@@ -34,7 +34,7 @@ changelog:
 release:
   github:
     owner: zoobz-io
-    name: samoa
+    name: ergo
   draft: false
   prerelease: auto
   mode: append

@@ -1,7 +1,7 @@
 repository:
-  name: samoa
-  description: Template repository for zoobz-io Go packages
-  homepage: https://samoa.zoobz.io
+  name: ergo
+  description: Go library for the zoobz-io ecosystem
+  homepage: https://ergo.zoobz.io
   has_wiki: true
   has_downloads: true
   default_branch: main
@@ -13,8 +13,7 @@ repository:
     - go
     - golang
     - zoobzio
-    - template
-    - boilerplate
+    - library
 
 labels:
   - name: "phase:plan"
