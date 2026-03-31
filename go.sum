@@ -1,0 +1,10 @@
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/zoobz-io/capitan v1.0.2 h1:/NKAgntWeRIN4S0oaZJNk6qaYuDN/Gw68+81kLbkLrc=
+github.com/zoobz-io/capitan v1.0.2/go.mod h1:tFqS6q99gRvgYBzvFIfJMDV1ukWU61H6ZB4HyZmiWuI=
+github.com/zoobz-io/clockz v1.0.2 h1:7ejfwTlaeNaVlLWW0pl1ZHfsaq3Iwg5vCphrvJMDNXI=
+github.com/zoobz-io/clockz v1.0.2/go.mod h1:kkUNGMtZ5r349253S1uOuLR/6YkC+qt8C8UIypFhn8o=
+github.com/zoobz-io/herald v1.0.4 h1:P7B9tEt2j291r0cFNr+K3uL0WdhQm5C1CIDMbtiwY9A=
+github.com/zoobz-io/herald v1.0.4/go.mod h1:Rr0ssfReeqtY0nleXf9varZcz8C0vH10IGRx9iL8mSg=
+github.com/zoobz-io/pipz v1.0.5 h1:PEY7KhIV+PFPseRcFVbo2gHoCFjKcDPz040/46jzcmM=
+github.com/zoobz-io/pipz v1.0.5/go.mod h1:Fqif5Ciw0GViOA1FbR2BBnSeOF0fWB9MCQ//ViGuGhs=
