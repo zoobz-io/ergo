@@ -1,4 +1,4 @@
-module github.com/zoobz-io/samoa
+module github.com/zoobz-io/ergo
 
 go 1.24
 

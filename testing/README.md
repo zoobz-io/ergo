@@ -1,6 +1,6 @@
 # Testing Infrastructure
 
-This directory contains testing utilities and infrastructure for samoa.
+This directory contains testing utilities and infrastructure for ergo.
 
 ## Structure
 
@@ -44,7 +44,7 @@ make test-bench
 Import the testing package:
 
 ```go
-import "github.com/zoobz-io/samoa/testing"
+import "github.com/zoobz-io/ergo/testing"
 ```
 
 ### Coverage Targets

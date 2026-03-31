@@ -1,6 +1,6 @@
-# Contributing to samoa
+# Contributing to ergo
 
-Thank you for considering contributing to samoa.
+Thank you for considering contributing to ergo.
 
 ## Development Setup
 
