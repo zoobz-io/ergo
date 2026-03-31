@@ -1,0 +1,40 @@
+version: 2
+project_name: samoa
+
+builds:
+  - skip: true  # Library packages don't build binaries
+
+archives:
+  - id: source
+    files:
+      - "*.go"
+      - "go.mod"
+      - "go.sum"
+      - "LICENSE"
+      - "README.md"
+      - "Makefile"
+      - "docs/**/*"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_source"
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: "Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+    - title: "Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+    - title: "Performance"
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: zoobz-io
+    name: samoa
+  draft: false
+  prerelease: auto
+  mode: append
