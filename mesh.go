@@ -12,14 +12,14 @@ import (
 // Mesh manages a collection of event channels that bridge capitan signals
 // with external message streams via herald providers.
 type Mesh struct {
+	codec    herald.Codec
 	factory  ProviderFactory
 	capitan  *capitan.Capitan
-	codec    herald.Codec
-	channels []channel
 	streams  map[streamKey]struct{}
+	channels []channel
+	mu       sync.Mutex
 	started  bool
 	closed   bool
-	mu       sync.Mutex
 }
 
 // streamKey uniquely identifies a stream registration by name and direction.
@@ -79,6 +79,7 @@ func (m *Mesh) Start(ctx context.Context) error {
 	}
 
 	// Start channels, rolling back on failure.
+	// nolint:prealloc
 	var started []channel
 	for _, ch := range m.channels {
 		if err := ch.start(ctx); err != nil {

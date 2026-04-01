@@ -12,11 +12,10 @@ import (
 
 // Pipeline identities.
 var (
-	publishID  = pipz.NewIdentity("ergo:publish", "Publishes to broker")
-	outPipeID  = pipz.NewIdentity("ergo:out", "Out channel pipeline")
-	emitID     = pipz.NewIdentity("ergo:emit", "Emits to capitan signal")
-	inPipeID   = pipz.NewIdentity("ergo:in", "In channel pipeline")
-	backoffID  = pipz.NewIdentity("ergo:backoff", "Default backoff")
+	publishID = pipz.NewIdentity("ergo:publish", "Publishes to broker")
+	outPipeID = pipz.NewIdentity("ergo:out", "Out channel pipeline")
+	emitID    = pipz.NewIdentity("ergo:emit", "Emits to capitan signal")
+	inPipeID  = pipz.NewIdentity("ergo:in", "In channel pipeline")
 )
 
 // Default reliability: 3 retries with 500ms exponential backoff.
@@ -34,11 +33,11 @@ func Out[T any](m *Mesh, stream string, signal capitan.Signal, key capitan.Gener
 	}
 
 	ch := &outChannel[T]{
-		stream_: stream,
-		signal_: signal,
-		key:     key,
-		mesh:    m,
-		config:  cfg,
+		stream: stream,
+		signal: signal,
+		key:    key,
+		mesh:   m,
+		config: cfg,
 	}
 	return m.register(ch)
 }
@@ -52,35 +51,35 @@ func In[T any](m *Mesh, stream string, signal capitan.Signal, key capitan.Generi
 	}
 
 	ch := &inChannel[T]{
-		stream_: stream,
-		signal_: signal,
-		key:     key,
-		mesh:    m,
-		config:  cfg,
+		stream: stream,
+		signal: signal,
+		key:    key,
+		mesh:   m,
+		config: cfg,
 	}
 	return m.register(ch)
 }
 
 // outChannel publishes capitan signals to an external stream.
 type outChannel[T any] struct {
-	stream_  string
-	signal_  capitan.Signal
-	key      capitan.GenericKey[T]
-	mesh     *Mesh
 	provider herald.Provider
 	codec    herald.Codec
+	mesh     *Mesh
 	pipeline *pipz.Pipeline[*herald.Envelope[T]]
 	observer *capitan.Observer
-	inflight sync.WaitGroup
+	signal   capitan.Signal
+	key      capitan.GenericKey[T]
+	stream   string
 	config   channelConfig[T]
+	inflight sync.WaitGroup
 }
 
-func (o *outChannel[T]) streamName() string { return o.stream_ }
+func (o *outChannel[T]) streamName() string { return o.stream }
 func (o *outChannel[T]) dir() direction     { return dirOut }
-func (o *outChannel[T]) signalName() string { return o.signal_.Name() }
+func (o *outChannel[T]) signalName() string { return o.signal.Name() }
 
 func (o *outChannel[T]) validate() error {
-	if o.stream_ == "" {
+	if o.stream == "" {
 		return ErrEmptyStream
 	}
 	return nil
@@ -88,7 +87,7 @@ func (o *outChannel[T]) validate() error {
 
 func (o *outChannel[T]) start(ctx context.Context) error {
 	// Create provider.
-	o.provider = o.mesh.factory(o.stream_)
+	o.provider = o.mesh.factory(o.stream)
 
 	// Ping to verify connectivity.
 	if err := o.provider.Ping(ctx); err != nil {
@@ -111,15 +110,15 @@ func (o *outChannel[T]) start(ctx context.Context) error {
 			herald.WithBackoff[T](defaultMaxAttempts, defaultBaseDelay),
 		}
 	}
-	chain := pipz.Chainable[*herald.Envelope[T]](terminal)
+	chain := terminal
 	for _, opt := range pipelineOpts {
 		chain = opt(chain)
 	}
 	o.pipeline = pipz.NewPipeline(outPipeID, chain)
 
 	// Register observer for this signal only.
-	cap := o.mesh.resolveCapitan()
-	o.observer = cap.Observe(func(_ context.Context, e *capitan.Event) {
+	capi := o.mesh.resolveCapitan()
+	o.observer = capi.Observe(func(_ context.Context, e *capitan.Event) {
 		value, ok := o.key.From(e)
 		if !ok {
 			return
@@ -137,7 +136,7 @@ func (o *outChannel[T]) start(ctx context.Context) error {
 		if err != nil {
 			o.emitError(e.Context(), "publish", err.Error(), nil)
 		}
-	}, o.signal_)
+	}, o.signal)
 
 	return nil
 }
@@ -154,11 +153,11 @@ func (o *outChannel[T]) close() error {
 }
 
 func (o *outChannel[T]) emitError(ctx context.Context, operation, errMsg string, raw []byte) {
-	cap := o.mesh.resolveCapitan()
-	cap.Emit(ctx, ErrorSignal, ErrorKey.Field(Error{
+	capi := o.mesh.resolveCapitan()
+	capi.Emit(ctx, ErrorSignal, ErrorKey.Field(Error{
 		Operation: operation,
-		Stream:    o.stream_,
-		Signal:    o.signal_.Name(),
+		Stream:    o.stream,
+		Signal:    o.signal.Name(),
 		Err:       errMsg,
 		Raw:       raw,
 	}))
@@ -166,24 +165,24 @@ func (o *outChannel[T]) emitError(ctx context.Context, operation, errMsg string,
 
 // inChannel consumes from an external stream and emits to capitan.
 type inChannel[T any] struct {
-	stream_  string
-	signal_  capitan.Signal
-	key      capitan.GenericKey[T]
-	mesh     *Mesh
 	provider herald.Provider
 	codec    herald.Codec
+	mesh     *Mesh
 	pipeline *pipz.Pipeline[*herald.Envelope[T]]
 	cancel   context.CancelFunc
-	wg       sync.WaitGroup
+	signal   capitan.Signal
+	key      capitan.GenericKey[T]
+	stream   string
 	config   channelConfig[T]
+	wg       sync.WaitGroup
 }
 
-func (i *inChannel[T]) streamName() string { return i.stream_ }
+func (i *inChannel[T]) streamName() string { return i.stream }
 func (i *inChannel[T]) dir() direction     { return dirIn }
-func (i *inChannel[T]) signalName() string { return i.signal_.Name() }
+func (i *inChannel[T]) signalName() string { return i.signal.Name() }
 
 func (i *inChannel[T]) validate() error {
-	if i.stream_ == "" {
+	if i.stream == "" {
 		return ErrEmptyStream
 	}
 	return nil
@@ -191,7 +190,7 @@ func (i *inChannel[T]) validate() error {
 
 func (i *inChannel[T]) start(ctx context.Context) error {
 	// Create provider.
-	i.provider = i.mesh.factory(i.stream_)
+	i.provider = i.mesh.factory(i.stream)
 
 	// Ping to verify connectivity.
 	if err := i.provider.Ping(ctx); err != nil {
@@ -205,8 +204,8 @@ func (i *inChannel[T]) start(ctx context.Context) error {
 	}
 
 	// Build pipeline: terminal emits to capitan.
-	cap := i.mesh.resolveCapitan()
-	terminal := newEmitTerminal[T](cap, i.signal_, i.key)
+	capi := i.mesh.resolveCapitan()
+	terminal := newEmitTerminal(capi, i.signal, i.key)
 
 	pipelineOpts := i.config.pipelineOpts
 	if len(pipelineOpts) == 0 {
@@ -214,7 +213,7 @@ func (i *inChannel[T]) start(ctx context.Context) error {
 			herald.WithBackoff[T](defaultMaxAttempts, defaultBaseDelay),
 		}
 	}
-	chain := pipz.Chainable[*herald.Envelope[T]](terminal)
+	chain := terminal
 	for _, opt := range pipelineOpts {
 		chain = opt(chain)
 	}
@@ -289,11 +288,11 @@ func (i *inChannel[T]) close() error {
 }
 
 func (i *inChannel[T]) emitError(ctx context.Context, operation, errMsg string, raw []byte) {
-	cap := i.mesh.resolveCapitan()
-	cap.Emit(ctx, ErrorSignal, ErrorKey.Field(Error{
+	capi := i.mesh.resolveCapitan()
+	capi.Emit(ctx, ErrorSignal, ErrorKey.Field(Error{
 		Operation: operation,
-		Stream:    i.stream_,
-		Signal:    i.signal_.Name(),
+		Stream:    i.stream,
+		Signal:    i.signal.Name(),
 		Err:       errMsg,
 		Raw:       raw,
 	}))
@@ -316,9 +315,9 @@ func newPublishTerminal[T any](provider herald.Provider, codec herald.Codec) pip
 }
 
 // newEmitTerminal creates the terminal pipz processor that emits to capitan.
-func newEmitTerminal[T any](cap *capitan.Capitan, signal capitan.Signal, key capitan.GenericKey[T]) pipz.Chainable[*herald.Envelope[T]] {
+func newEmitTerminal[T any](capi *capitan.Capitan, signal capitan.Signal, key capitan.GenericKey[T]) pipz.Chainable[*herald.Envelope[T]] {
 	return pipz.Effect(emitID, func(ctx context.Context, env *herald.Envelope[T]) error {
-		cap.Emit(ctx, signal, key.Field(env.Value), herald.MetadataKey.Field(env.Metadata))
+		capi.Emit(ctx, signal, key.Field(env.Value), herald.MetadataKey.Field(env.Metadata))
 		return nil
 	})
 }
